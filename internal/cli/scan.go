@@ -1,0 +1,92 @@
+package cli
+
+import (
+	"context"
+	"fmt"
+	"path/filepath"
+	"strings"
+
+	"github.com/benjaminbellamy/reliure/internal/scanner"
+	"github.com/benjaminbellamy/reliure/internal/snapshot"
+	"github.com/benjaminbellamy/reliure/internal/system"
+	"github.com/benjaminbellamy/reliure/internal/tui"
+)
+
+// scanOpts controls a snapshot scan.
+type scanOpts struct {
+	Sources          []string // nil = all
+	IncludeInference bool
+	Exclude          []string // glob patterns against Package.ID
+}
+
+// runScan builds a Snapshot by running the selected scanners.
+func runScan(ctx context.Context, theme tui.Theme, opts scanOpts) (*snapshot.Snapshot, error) {
+	registry := scanner.DefaultRegistry()
+	if opts.Sources != nil {
+		valid := map[string]struct{}{}
+		for _, n := range registry.AllNames(true) {
+			valid[n] = struct{}{}
+		}
+		var unknown []string
+		for _, s := range opts.Sources {
+			if _, ok := valid[s]; !ok {
+				unknown = append(unknown, s)
+			}
+		}
+		if len(unknown) > 0 {
+			return nil, fmt.Errorf("unknown source(s): %s", strings.Join(unknown, ", "))
+		}
+	}
+	scs := registry.Selected(opts.Sources, opts.IncludeInference)
+	if len(scs) == 0 {
+		return nil, fmt.Errorf("no scanners selected")
+	}
+
+	meta := snapshot.NewMeta(system.Hostname(), system.PrettyName(), system.Codename())
+	snap := snapshot.New(meta)
+
+	for _, s := range scs {
+		fmt.Println("  " + theme.Muted.Render("scanning ")  + theme.Title.Render(s.Name()) + " …")
+		res := scanner.Run(ctx, s)
+		switch {
+		case res.SkippedReason != "":
+			fmt.Println("    " + theme.Skip.Render("skipped: "+res.SkippedReason))
+		case len(res.Errors) > 0:
+			for _, e := range res.Errors {
+				fmt.Println("    " + theme.Err.Render("error: "+e))
+			}
+		default:
+			snap.Packages = append(snap.Packages, res.Packages...)
+			fmt.Println("    " + theme.OK.Render(fmt.Sprintf("%d package(s)", len(res.Packages))))
+		}
+	}
+
+	snap.Dedupe()
+
+	if len(opts.Exclude) > 0 {
+		before := len(snap.Packages)
+		snap.Packages = applyExcludes(snap.Packages, opts.Exclude)
+		dropped := before - len(snap.Packages)
+		fmt.Println("  " + theme.Muted.Render(fmt.Sprintf("excluded %d entry(ies) matching %v", dropped, opts.Exclude)))
+	}
+
+	return snap, nil
+}
+
+// applyExcludes removes packages whose ID matches any of the given globs.
+func applyExcludes(pkgs []snapshot.Package, patterns []string) []snapshot.Package {
+	out := pkgs[:0]
+	for _, p := range pkgs {
+		drop := false
+		for _, pat := range patterns {
+			if ok, _ := filepath.Match(pat, p.ID); ok {
+				drop = true
+				break
+			}
+		}
+		if !drop {
+			out = append(out, p)
+		}
+	}
+	return out
+}

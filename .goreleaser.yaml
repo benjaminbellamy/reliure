@@ -1,0 +1,45 @@
+version: 2
+
+project_name: reliure
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: reliure
+    main: ./cmd/reliure
+    binary: reliure
+    env:
+      - CGO_ENABLED=0
+    goos: [linux]
+    goarch: [amd64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: bare-binary
+    # Ship the binary as-is (no tarball wrapper) — simpler to download and chmod.
+    formats: [binary]
+    name_template: "{{ .ProjectName }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "SHA256SUMS"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^test:"
+
+release:
+  draft: false
+  prerelease: auto

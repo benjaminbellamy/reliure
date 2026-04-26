@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="reliure {{.Version}}">
+<title>Reliure snapshot — {{.Snapshot.Meta.Hostname}} — {{.Snapshot.Meta.DateShort}}</title>
+<style>
+  :root {
+    --primary: #7D56F4;
+    --primary-deep: #5C3FBF;
+    --accent: #43BF6D;
+    --warn: #D5752E;
+    --muted: #7E7E87;
+    --bg: #FFFFFF;
+    --surface: #FAFAFA;
+    --border: #E5E5EE;
+    --text: #1F2024;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161B;
+      --surface: #1F1F26;
+      --border: #2F2F38;
+      --text: #ECECEE;
+      --muted: #9595A2;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+    color: var(--text);
+    max-width: 920px;
+    margin: 2rem auto;
+    padding: 0 2.5rem;
+    line-height: 1.55;
+  }
+
+  /* --- Header --- */
+  header {
+    border-bottom: 4px solid var(--primary);
+    padding-bottom: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-size: 2.6rem;
+    margin: 0;
+    color: var(--primary);
+    letter-spacing: -0.03em;
+    font-weight: 800;
+  }
+  .tagline {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 1.05rem;
+  }
+
+  /* --- Meta block --- */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.4rem 1.5rem;
+    margin: 1.5rem 0 2rem;
+    padding: 1.2rem 1.4rem;
+    background: var(--surface);
+    border-radius: 0.6rem;
+    border: 1px solid var(--border);
+  }
+  .meta-grid dt {
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    padding-top: 0.1rem;
+  }
+  .meta-grid dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Table of contents --- */
+  .toc { margin-bottom: 3rem; }
+  .toc h2 {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 1.5rem;
+  }
+  .toc a {
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    align-items: baseline;
+    padding: 0.4rem 0;
+    border-bottom: 1px dotted var(--border);
+  }
+  .toc a:hover { color: var(--primary); }
+  .toc .count {
+    color: var(--muted);
+    margin-left: auto;
+    padding-left: 0.5em;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85em;
+  }
+
+  /* --- Sections --- */
+  section { margin-bottom: 2.5rem; }
+  section h2 {
+    font-size: 1.4rem;
+    color: var(--primary-deep);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.3rem;
+    margin: 0 0 1rem;
+    font-weight: 700;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  section h2 .count {
+    font-size: 0.65em;
+    color: var(--muted);
+    font-weight: 500;
+    margin-left: 0.6rem;
+    font-variant-numeric: tabular-nums;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.93rem;
+  }
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.7em;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 0.6rem 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 0.55rem 0.6rem 0.55rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  td.col-name { width: 55%; }
+  td.col-version { width: 22%; }
+  td.col-tags { width: 23%; }
+
+  .name { font-weight: 500; }
+  .version {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
+    color: var(--muted);
+    font-size: 0.92em;
+    font-variant-numeric: tabular-nums;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.82em;
+    margin-top: 0.15rem;
+  }
+  .subtitle a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--muted); }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .badge {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border-radius: 0.7rem;
+    font-size: 0.72em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    white-space: nowrap;
+  }
+  .badge-essential { background: var(--warn); color: white; }
+  .badge-os { background: var(--surface); color: var(--muted); border: 1px solid var(--border); font-style: italic; }
+  .badge-unverified { background: var(--surface); color: var(--warn); border: 1px solid var(--warn); }
+
+  /* --- Footer --- */
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.82em;
+    color: var(--muted);
+    text-align: center;
+  }
+  footer a { color: var(--muted); }
+
+  /* --- Print --- */
+  @media print {
+    body { max-width: none; margin: 0; padding: 0; font-size: 10pt; }
+    .toc { display: none; }
+    section { page-break-before: auto; break-before: auto; }
+    section h2 { page-break-after: avoid; break-after: avoid; }
+    tr { page-break-inside: avoid; break-inside: avoid; }
+    a { color: inherit !important; text-decoration: none !important; }
+    @page { margin: 1.8cm; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Reliure</h1>
+  <p class="tagline">{{.Tagline}}</p>
+</header>
+
+<dl class="meta-grid">
+  <dt>Date</dt>
+  <dd>{{.Snapshot.Meta.Date}}</dd>
+
+  <dt>Host</dt>
+  <dd>{{.Snapshot.Meta.Hostname}}</dd>
+
+  <dt>OS</dt>
+  <dd>{{.Snapshot.Meta.OS}}{{if .Snapshot.Meta.OSCodename}} ({{.Snapshot.Meta.OSCodename}}){{end}}</dd>
+
+  <dt>Packages</dt>
+  <dd>
+    <strong>{{.Stats.Total}}</strong>
+    {{if .Stats.Essential}}· {{.Stats.Essential}} essential{{end}}
+    {{if .Stats.OS}}· {{.Stats.OS}} OS{{end}}
+    {{if .Stats.Unverified}}· {{.Stats.Unverified}} unverified{{end}}
+  </dd>
+</dl>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    {{range .Sections}}
+    <li><a href="#{{.ID}}">{{.Title}}<span class="count">{{.Total}}</span></a></li>
+    {{end}}
+  </ol>
+</nav>
+
+{{range .Sections}}
+<section id="{{.ID}}">
+  <h2>{{.Title}}<span class="count">{{.Total}}</span></h2>
+  <table>
+    <colgroup>
+      <col class="col-name">
+      <col class="col-version">
+      <col class="col-tags">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Version</th>
+        <th>Tags</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Items}}
+      <tr>
+        <td class="col-name">
+          <div class="name">{{.Name}}</div>
+          {{if .Subtitle}}<div class="subtitle">{{.Subtitle}}</div>{{end}}
+        </td>
+        <td class="col-version"><span class="version">{{.Version}}</span></td>
+        <td class="col-tags">
+          <div class="badges">
+            {{range .Badges}}<span class="badge badge-{{.Kind}}">{{.Text}}</span>{{end}}
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}
+
+<footer>
+  Generated by Reliure {{.Version}} on {{.Generated}}.<br>
+  {{.Copyright}} — Licensed under the GNU GPL version 3 or later.
+</footer>
+
+</body>
+</html>
