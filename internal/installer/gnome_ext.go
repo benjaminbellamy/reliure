@@ -22,6 +22,7 @@ func (g GNOMEExtInstaller) Install(_ context.Context, items []snapshot.Package, 
 		return nil
 	}
 	rep.Section("gnome extensions")
+	rep.SectionTotal(len(items))
 	rep.Note("install these via the Extensions app (or extensions.gnome.org):")
 	results := make([]ItemResult, 0, len(items))
 	for _, p := range items {

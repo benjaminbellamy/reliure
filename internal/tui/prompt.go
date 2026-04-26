@@ -147,10 +147,16 @@ func AskConfirm(theme Theme, prompt string, dflt Confirm) Confirm {
 }
 
 // StreamReporter is a Reporter that pretty-prints to a Writer.
+//
+// Each Section call resets a per-section counter; subsequent Result calls
+// emit a "[i/n]" prefix when the section knows its total. Use SectionTotal
+// to set the total for the upcoming section.
 type StreamReporter struct {
-	W     io.Writer
-	Theme Theme
-	stats Counts
+	W            io.Writer
+	Theme        Theme
+	stats        Counts
+	sectionTotal int
+	sectionDone  int
 }
 
 // Counts tallies install outcomes for the final summary.
@@ -163,29 +169,47 @@ type Counts struct {
 // Stats returns the running counts.
 func (s *StreamReporter) Stats() Counts { return s.stats }
 
+// SectionTotal pre-declares how many items the upcoming section will report.
+// Used to prefix each Result line with "[i/n]".
+func (s *StreamReporter) SectionTotal(n int) {
+	s.sectionTotal = n
+	s.sectionDone = 0
+}
+
 func (s *StreamReporter) Section(title string) {
 	fmt.Fprintln(s.W)
 	Section(s.W, s.Theme, title)
+	s.sectionTotal = 0
+	s.sectionDone = 0
+}
+
+func (s *StreamReporter) progressPrefix() string {
+	if s.sectionTotal <= 0 {
+		return ""
+	}
+	s.sectionDone++
+	return s.Theme.Muted.Render(fmt.Sprintf("[%d/%d] ", s.sectionDone, s.sectionTotal))
 }
 
 func (s *StreamReporter) Result(r installer.ItemResult) {
 	id := identityFor(r.Package)
+	prefix := s.progressPrefix()
 	switch r.Outcome {
 	case installer.OutcomeInstalled:
-		fmt.Fprintln(s.W, "  "+s.Theme.OK.Render("✓")+" "+id)
+		fmt.Fprintln(s.W, "  "+prefix+s.Theme.OK.Render("✓")+" "+id)
 		s.stats.Installed++
 	case installer.OutcomeAlreadyInstalled:
-		fmt.Fprintln(s.W, "  "+s.Theme.Skip.Render("·")+" "+s.Theme.Skip.Render(id+" (already installed)"))
+		fmt.Fprintln(s.W, "  "+prefix+s.Theme.Skip.Render("·")+" "+s.Theme.Skip.Render(id+" (already installed)"))
 		s.stats.Skipped++
 	case installer.OutcomeFailed:
 		msg := id
 		if r.Err != nil {
 			msg = id + ": " + r.Err.Error()
 		}
-		fmt.Fprintln(s.W, "  "+s.Theme.Err.Render("✗")+" "+msg)
+		fmt.Fprintln(s.W, "  "+prefix+s.Theme.Err.Render("✗")+" "+msg)
 		s.stats.Failed++
 	case installer.OutcomeSkipped:
-		fmt.Fprintln(s.W, "  "+s.Theme.Skip.Render("·")+" "+s.Theme.Skip.Render(id))
+		fmt.Fprintln(s.W, "  "+prefix+s.Theme.Skip.Render("·")+" "+s.Theme.Skip.Render(id))
 		s.stats.Skipped++
 	}
 }

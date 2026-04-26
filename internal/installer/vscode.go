@@ -19,6 +19,7 @@ func (v VSCodeInstaller) Install(ctx context.Context, items []snapshot.Package, 
 		return nil
 	}
 	rep.Section("vscode")
+	rep.SectionTotal(len(items))
 	results := make([]ItemResult, 0, len(items))
 	for _, p := range items {
 		ext := p.ExtensionID

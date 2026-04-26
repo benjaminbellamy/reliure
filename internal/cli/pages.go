@@ -54,6 +54,14 @@ func buildPickerPages(s *snapshot.Snapshot, checked func(snapshot.Package) bool,
 				}
 				return p.Name
 			}},
+		{key: snapshot.SourcePip, title: "pip", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
+		{key: snapshot.SourcePipx, title: "pipx", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
+		{key: snapshot.SourceCargo, title: "cargo", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
+		{key: snapshot.SourceNpm, title: "npm", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
 	}
 
 	pages := []picker.Page{}

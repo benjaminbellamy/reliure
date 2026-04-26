@@ -134,6 +134,10 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 		installer.SnapInstaller{},
 		installer.VSCodeInstaller{},
 		installer.GNOMEExtInstaller{},
+		installer.PipInstaller{},
+		installer.PipxInstaller{},
+		installer.CargoInstaller{},
+		installer.NpmInstaller{},
 	}
 	for _, ins := range installers {
 		if !ins.Available() {

@@ -20,6 +20,7 @@ func (s SnapInstaller) Install(ctx context.Context, items []snapshot.Package, op
 		return nil
 	}
 	rep.Section("snap")
+	rep.SectionTotal(len(items))
 	results := make([]ItemResult, 0, len(items))
 	for _, p := range items {
 		if snapInstalled(p.Name) {

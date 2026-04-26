@@ -31,8 +31,8 @@ type CLI struct {
 	Snapshot SnapshotCmd `cmd:"" help:"Scan the system and write a snapshot YAML. No picker."`
 	Restore  RestoreCmd  `cmd:"" help:"Read a snapshot YAML and run the picker + installs."`
 	Report   ReportCmd   `cmd:"" help:"Render a snapshot as a styled, printable HTML report."`
-	List     ListCmd     `cmd:"" help:"Print snapshot contents (v0.2)."`
-	Diff     DiffCmd     `cmd:"" help:"Compare two snapshots (v0.2)."`
+	List     ListCmd     `cmd:"" help:"Print a styled tabular view of a snapshot."`
+	Diff     DiffCmd     `cmd:"" help:"Compare two snapshots — show what was added/removed/changed."`
 	Version  VersionCmd  `cmd:"" help:"Print the binary version."`
 }
 

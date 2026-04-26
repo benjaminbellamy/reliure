@@ -112,8 +112,8 @@ reliure backup [flags]           # explicit alias for the default
 reliure snapshot [flags]         # scan + write YAML, no picker, no installs
 reliure restore <snapshot.yaml>  # picker + run installs
 reliure report  <snapshot.yaml>  # render a styled HTML report (printable to PDF)
-reliure list    <snapshot.yaml>  # v0.2 stub
-reliure diff    <a> <b>          # v0.2 stub
+reliure list    <snapshot.yaml>  # styled table view of a snapshot
+reliure diff    <a> <b>          # added/removed/changed between two snapshots
 reliure version
 ```
 
@@ -146,6 +146,16 @@ reliure version
 |------------------|-----------------------------------------------------------|
 | `-o, --output PATH` | output HTML path (default: `./reliure-report-YYYYMMDD.html` in cwd) |
 
+**`list` flags**
+
+| Flag                | What it does                                          |
+|---------------------|-------------------------------------------------------|
+| `--source NAME`     | restrict to these sources (repeatable)                 |
+| `--essential`       | show only items flagged essential                      |
+| `--unverified`      | show only inferred / unverified items                  |
+| `--os`              | show only items flagged as OS-installed                |
+| `--user-only`       | hide OS-installed items (mutually exclusive with `--os`) |
+
 ---
 
 ## Reports
@@ -172,6 +182,10 @@ Layout: a header with the date / host / OS / package counts, a two-column table 
 | `snap`            | `snap list` (infrastructure snaps filtered)                                                                                       |
 | `vscode`          | `code --list-extensions`                                                                                                          |
 | `gnome-ext`       | `~/.local/share/gnome-shell/extensions/` and `/usr/share/gnome-shell/extensions/` — restore via the Extensions app (URL surfaced) |
+| `pip`             | `pip list --user --format=json`                                                                                                   |
+| `pipx`            | `pipx list --json`                                                                                                                 |
+| `cargo`           | `cargo install --list`                                                                                                            |
+| `npm`             | `npm list -g --depth=0 --json`                                                                                                    |
 | GNOME settings    | `dconf dump /org/gnome/` (optional, prompted at backup time)                                                                      |
 | shell history     | `~/.bash_history`, `~/.zsh_history` for install commands (`apt`, `snap`, `flatpak`, `pip`, `pipx`, `cargo`, `npm`, VS Code)        |
 | manual installs   | `/opt/`, `/usr/local/bin/`, `~/.local/bin/`, `/etc/apt/sources.list.d/`, plus fingerprint dirs (`~/.nvm`, `~/.ollama`, `/etc/docker`, `~/.rustup`, `~/.deno`, `~/.bun`, `~/.pyenv`, …) |

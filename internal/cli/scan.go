@@ -46,18 +46,22 @@ func runScan(ctx context.Context, theme tui.Theme, opts scanOpts) (*snapshot.Sna
 	snap := snapshot.New(meta)
 
 	for _, s := range scs {
-		fmt.Println("  " + theme.Muted.Render("scanning ")  + theme.Title.Render(s.Name()) + " …")
+		spin := tui.NewSpinner("scanning " + s.Name() + " …")
+		spin.Start()
 		res := scanner.Run(ctx, s)
+		spin.Stop()
+		// Print a one-line summary in place of the (now-cleared) spinner.
 		switch {
 		case res.SkippedReason != "":
-			fmt.Println("    " + theme.Skip.Render("skipped: "+res.SkippedReason))
+			fmt.Println("  " + theme.Skip.Render("·") + " " + theme.Skip.Render(s.Name()+" — "+res.SkippedReason))
 		case len(res.Errors) > 0:
 			for _, e := range res.Errors {
-				fmt.Println("    " + theme.Err.Render("error: "+e))
+				fmt.Println("  " + theme.Err.Render("✗") + " " + theme.Err.Render(s.Name()+" — "+e))
 			}
 		default:
 			snap.Packages = append(snap.Packages, res.Packages...)
-			fmt.Println("    " + theme.OK.Render(fmt.Sprintf("%d package(s)", len(res.Packages))))
+			fmt.Println("  " + theme.OK.Render("✓") + " " + theme.Title.Render(s.Name()) + "  " +
+				theme.Muted.Render(fmt.Sprintf("%d package(s)", len(res.Packages))))
 		}
 	}
 

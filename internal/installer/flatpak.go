@@ -20,6 +20,7 @@ func (f FlatpakInstaller) Install(ctx context.Context, items []snapshot.Package,
 		return nil
 	}
 	rep.Section("flatpak")
+	rep.SectionTotal(len(items))
 
 	if err := ensureFlathub(ctx, opts, rep); err != nil {
 		rep.Warn("could not ensure flathub remote: %v", err)

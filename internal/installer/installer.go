@@ -50,8 +50,9 @@ type ItemResult struct {
 // Reporter is the channel through which installers tell the UI what's
 // happening. The CLI implements this with a Lip Gloss-styled streaming view.
 type Reporter interface {
-	Section(title string)        // "apt", "flatpak", …
-	Result(r ItemResult)         // per-item outcome
+	Section(title string)         // "apt", "flatpak", …
+	SectionTotal(n int)           // pre-declares item count → enables "[i/n]" prefix on Results
+	Result(r ItemResult)          // per-item outcome
 	Note(format string, a ...any) // prose narration
 	Warn(format string, a ...any)
 }
