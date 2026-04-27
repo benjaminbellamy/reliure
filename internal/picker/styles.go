@@ -9,7 +9,6 @@ type Styles struct {
 	AppTitle       lipgloss.Style // top-of-screen "Reliure" wordmark
 	PageTitle      lipgloss.Style // big per-source heading
 	Subtitle       lipgloss.Style
-	PageBadge      lipgloss.Style
 	CountBadge     lipgloss.Style
 	ListContainer  lipgloss.Style
 	Item           lipgloss.Style
@@ -54,11 +53,6 @@ func DefaultStyles() Styles {
 		Subtitle: lipgloss.NewStyle().Foreground(muted),
 		HeaderRule: lipgloss.NewStyle().Foreground(soft),
 
-		PageBadge: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(primary).
-			Bold(true).
-			Padding(0, 1),
 		CountBadge: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Background(accent).

@@ -325,9 +325,8 @@ func (m *model) View() string {
 	page := m.pages[m.pi]
 	n := len(page.Items)
 
-	// Top row: app wordmark · page badge · (spring) · selected count
+	// Top row: app wordmark · (spring) · selected count
 	wordmark := m.styles.AppTitle.Render(m.title)
-	pageBadge := m.styles.PageBadge.Render(fmt.Sprintf(" Page %d / %d ", m.pi+1, len(m.pages)))
 	on := 0
 	for _, b := range st.checked {
 		if b {
@@ -335,13 +334,16 @@ func (m *model) View() string {
 		}
 	}
 	countBadge := m.styles.CountBadge.Render(fmt.Sprintf(" %d / %d selected ", on, n))
-	left := wordmark + "  " + pageBadge
-	topRow := headerWithCounter(m.width-2, left, countBadge)
+	topRow := headerWithCounter(m.width-2, wordmark, countBadge)
 
-	// Big visible page title (per-source heading) — high-contrast bar.
+	// Big visible page title (per-source heading) with right-aligned page
+	// counter on the same bar. The -6 accounts for the outer margin and
+	// PageTitle's horizontal padding (see styles.go).
+	titleLeft := " ▌ " + strings.ToUpper(page.Title)
+	titleRight := fmt.Sprintf("page %d / %d ", m.pi+1, len(m.pages))
 	pageTitle := m.styles.PageTitle.
 		Width(m.width - 2).
-		Render(" ▌ " + strings.ToUpper(page.Title) + " ")
+		Render(headerWithCounter(m.width-6, titleLeft, titleRight))
 
 	// Item list
 	listBody := m.renderList(st, page)

@@ -70,6 +70,13 @@ var sectionOrder = []struct {
 	{"snap", "snap", snapshot.SourceSnap},
 	{"vscode", "VS Code extensions", snapshot.SourceVSCode},
 	{"gnome-ext", "GNOME Shell extensions", snapshot.SourceGnomeExt},
+	{"pip", "pip", snapshot.SourcePip},
+	{"pipx", "pipx", snapshot.SourcePipx},
+	{"cargo", "cargo", snapshot.SourceCargo},
+	{"npm", "npm", snapshot.SourceNpm},
+	{"go", "Go binaries (go install)", snapshot.SourceGo},
+	{"ollama", "Ollama models", snapshot.SourceOllama},
+	{"appimage", "AppImages (manual re-download)", snapshot.SourceAppImage},
 	{"history", "Inferred from shell history", snapshot.SourceHistory},
 	{"manual", "Manual installs", snapshot.SourceManual},
 }

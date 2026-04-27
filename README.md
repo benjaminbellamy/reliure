@@ -8,15 +8,15 @@ Format, Reinstall, Restore. A new clean system every 6 months.
 
 ---
 
-**Reliure** scans your Linux system, builds a YAML list of everything installed (apt packages, flatpaks, snaps, VS Code extensions, GNOME Shell extensions, GNOME settings, plus clues from your shell history and manual installs), and lets you reinstall it on a fresh system through a slick interactive picker.
+**Reliure** scans your Linux system, builds a YAML list of everything installed (apt packages, flatpaks, snaps, VS Code extensions, GNOME Shell extensions, pip / pipx / cargo / npm packages, `go install`-ed binaries, locally-pulled Ollama models, AppImages, GNOME settings, plus clues from your shell history and manual installs), and lets you reinstall it on a fresh system through a slick interactive picker.
 
 It's a single static binary built in Go.
 
 ### Highlights
 
-- **Single static binary** (~5 MB, `linux/amd64`). No Python, no `dialog`, no `whiptail`, no curl-piped scripts on the new system.
+- **Single static binary** (~6 MB, `linux/amd64`). No Python, no `dialog`, no `whiptail`, no curl-piped scripts on the new system.
 - **Slick TUI** built on the Charm stack (Bubble Tea + Bubbles + Lip Gloss). Multi-page wizard, six labelled buttons, all keyboard-driven, with a `back` option from every confirmation.
-- **Smart scanning**: picks up apt, flatpak, snap, VS Code, GNOME Shell extensions, GNOME dconf settings, and inference sources (shell history + manual installs in `/opt`, `/usr/local/bin`, `~/.local/bin`, third-party APT repos, runtime fingerprints).
+- **Smart scanning**: picks up apt, flatpak, snap, VS Code, GNOME Shell extensions, pip / pipx / cargo / npm, `go install`-ed binaries, locally-pulled Ollama models, AppImages, GNOME dconf settings, and inference sources (shell history + manual installs in `/opt`, `/usr/local/bin`, `~/.local/bin`, third-party APT repos, runtime fingerprints).
 - **OS-vs-user diff**: packages that arrived with the original Ubuntu install are flagged `[os]` (heuristic: `/var/log/installer/*` mtime ± dpkg.log burst detection) so you can focus on what *you* added.
 - **Printable HTML report**: `reliure report <snapshot.yaml>` emits a styled standalone HTML — open in a browser and Cmd/Ctrl-P → Save as PDF.
 
@@ -40,7 +40,7 @@ The full clean-reinstall workflow:
     reliure
     ```
 
-   The system gets scanned, you walk through a multi-page checkbox picker (one page per source: apt, flatpak, snap, vscode, gnome-ext, plus an "inferred" review page), and a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`. Optionally a `reliure-gnome-YYYYMMDD.dconf` is dumped into `~/Documents/`.
+   The system gets scanned, you walk through a multi-page checkbox picker (one page per source: apt, flatpak, snap, vscode, gnome-ext, pip, pipx, cargo, npm, go binaries, ollama models, appimages, plus an "inferred" review page), and a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`. Optionally a `reliure-gnome-YYYYMMDD.dconf` is dumped into `~/Documents/`.
 
 3. **Back up your data** with whatever tool you usually use (DéjaDup, Borg, rsync, …). Make sure `~/Documents/` and `~/.config/reliure/` are included so the snapshot and dconf file go with it.
 
@@ -62,21 +62,23 @@ You have a brand new clean computer.
 
 ## The picker
 
-Built on the Charm stack (Bubble Tea + Bubbles + Lip Gloss). Multi-page wizard, one page per source, with the section name as a high-contrast colored bar at the top of each page.
+Built on the Charm stack (Bubble Tea + Bubbles + Lip Gloss). Multi-page wizard, one page per source, with the section name as a high-contrast colored bar at the top of each page and a `page X / Y` counter right-aligned on the same bar.
 
 **Keys (work regardless of which control is focused):**
 
-| Key       | What it does                                  |
-|-----------|-----------------------------------------------|
-| `↑` / `↓` | navigate items                                |
-| `Space`   | toggle current item                           |
-| `A`       | select **A**ll (current page)                 |
-| `Z`       | select none (**Z**ero)                        |
-| `I`       | **I**nvert selection                          |
-| `P` / `←` | **P**revious page                             |
-| `N` / `→` | **N**ext page (becomes `Apply ✓` on the last) |
-| `Tab`     | move focus between list and buttons           |
-| `Q` / `Esc` | quit / abort                                |
+| Key                | What it does                                  |
+|--------------------|-----------------------------------------------|
+| `↑` / `↓` (`k`/`j`)| navigate items                                |
+| `PgUp` / `PgDn`    | scroll a page at a time                       |
+| `Home` / `End` (`g`/`G`) | jump to top / bottom                    |
+| `Space` / `Enter`  | toggle current item                           |
+| `A`                | select **A**ll (current page)                 |
+| `Z` / `0`          | select none (**Z**ero)                        |
+| `I`                | **I**nvert selection                          |
+| `P` / `←`          | **P**revious page                             |
+| `N` / `→`          | **N**ext page (becomes `Apply ✓` on the last) |
+| `Tab` / `Shift-Tab`| move focus between list and buttons           |
+| `Q` / `Esc` / `Ctrl-C` | quit / abort                              |
 
 **Buttons** (always visible, all clickable via `Tab` + `Enter`):
 
@@ -92,7 +94,8 @@ Built on the Charm stack (Bubble Tea + Bubbles + Lip Gloss). Multi-page wizard, 
 | `[os]`             | arrived with the original OS install (don't need to reinstall)           |
 | `[installed]`      | already installed at the snapshot's version (restore-time only)          |
 | `[installed: X]`   | installed at a *different* version — you may want to upgrade             |
-| `[unverified]`     | inferred via heuristics — review carefully                               |
+
+Inferred entries (shell history + manual installs) live on a dedicated *"inferred (review carefully)"* page rather than carrying a per-item badge — they default off and are never auto-installed.
 
 **Confirmation prompt** after the picker:
 
@@ -186,6 +189,9 @@ Layout: a header with the date / host / OS / package counts, a two-column table 
 | `pipx`            | `pipx list --json`                                                                                                                 |
 | `cargo`           | `cargo install --list`                                                                                                            |
 | `npm`             | `npm list -g --depth=0 --json`                                                                                                    |
+| `go`              | `go version -m` on each binary in `$GOBIN` (or `$GOPATH/bin`, default `~/go/bin`); restore re-runs `go install <path>@<version>` |
+| `ollama`          | `ollama list` — locally pulled models; restore re-pulls each via `ollama pull <model:tag>`                                        |
+| `appimage`        | `*.AppImage` files in `~/Applications/`, `~/.local/bin/`, `/opt/`. Manual re-download — restore prints filenames as a to-do list |
 | GNOME settings    | `dconf dump /org/gnome/` (optional, prompted at backup time)                                                                      |
 | shell history     | `~/.bash_history`, `~/.zsh_history` for install commands (`apt`, `snap`, `flatpak`, `pip`, `pipx`, `cargo`, `npm`, VS Code)        |
 | manual installs   | `/opt/`, `/usr/local/bin/`, `~/.local/bin/`, `/etc/apt/sources.list.d/`, plus fingerprint dirs (`~/.nvm`, `~/.ollama`, `/etc/docker`, `~/.rustup`, `~/.deno`, `~/.bun`, `~/.pyenv`, …) |

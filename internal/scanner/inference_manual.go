@@ -120,6 +120,9 @@ func scanUsrLocalBin(_ context.Context) []snapshot.Package {
 	}
 	out := []snapshot.Package{}
 	for _, e := range entries {
+		if isAppImage(e.Name()) {
+			continue
+		}
 		full := dir + "/" + e.Name()
 		if !isExecutableFile(full) {
 			continue
@@ -142,6 +145,7 @@ func scanUsrLocalBin(_ context.Context) []snapshot.Package {
 
 func scanUserBins(ctx context.Context) []snapshot.Package {
 	pipxManaged := pipxBinaries(ctx)
+	goManaged := GoBinBasenames()
 	home, _ := os.UserHomeDir()
 	dirs := []string{filepath.Join(home, ".local", "bin"), filepath.Join(home, "bin")}
 	out := []snapshot.Package{}
@@ -152,6 +156,12 @@ func scanUserBins(ctx context.Context) []snapshot.Package {
 		}
 		for _, e := range entries {
 			if _, skip := pipxManaged[e.Name()]; skip {
+				continue
+			}
+			if _, skip := goManaged[e.Name()]; skip {
+				continue
+			}
+			if isAppImage(e.Name()) {
 				continue
 			}
 			full := filepath.Join(d, e.Name())

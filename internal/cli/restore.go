@@ -138,6 +138,9 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 		installer.PipxInstaller{},
 		installer.CargoInstaller{},
 		installer.NpmInstaller{},
+		installer.GoBinInstaller{},
+		installer.OllamaInstaller{},
+		installer.AppImageInstaller{},
 	}
 	for _, ins := range installers {
 		if !ins.Available() {

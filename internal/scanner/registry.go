@@ -20,6 +20,9 @@ func DefaultRegistry() *Registry {
 			"pipx":      PipxScanner{},
 			"cargo":     CargoScanner{},
 			"npm":       NpmScanner{},
+			"ollama":    OllamaScanner{},
+			"go":        GoBinScanner{},
+			"appimage":  AppImageScanner{},
 		},
 		inference: map[string]Scanner{
 			"history": HistoryScanner{},
@@ -29,7 +32,7 @@ func DefaultRegistry() *Registry {
 }
 
 // directOrder is the canonical iteration order for direct scanners.
-var directOrder = []string{"apt", "flatpak", "snap", "vscode", "gnome-ext", "pip", "pipx", "cargo", "npm"}
+var directOrder = []string{"apt", "flatpak", "snap", "vscode", "gnome-ext", "pip", "pipx", "cargo", "npm", "go", "ollama", "appimage"}
 
 // inferenceOrder is the canonical iteration order for inference scanners.
 var inferenceOrder = []string{"history", "manual"}
