@@ -30,6 +30,8 @@ const (
 	SourceOllama   Source = "ollama"
 	SourceGo       Source = "go"
 	SourceAppImage Source = "appimage"
+	SourceWifi     Source = "wifi"
+	SourceVPN      Source = "vpn"
 	SourceManual   Source = "manual"
 	SourceHistory  Source = "history"
 	SourceGnomeExt Source = "gnome-ext"
@@ -52,6 +54,7 @@ type Package struct {
 	ExtensionID string `yaml:"extension_id,omitempty"`
 	Crate       string `yaml:"crate,omitempty"`
 	URL         string `yaml:"url,omitempty"`
+	Payload     string `yaml:"payload,omitempty"` // base64 — currently used by wifi/vpn for the .nmconnection body
 	DetectedVia string `yaml:"detected_via,omitempty"`
 	Evidence    string `yaml:"evidence,omitempty"`
 	RestoreHint string `yaml:"restore_hint,omitempty"`

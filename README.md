@@ -8,7 +8,7 @@ Format, Reinstall, Restore. A new clean system every 6 months.
 
 ---
 
-**Reliure** scans your Linux system, builds a YAML list of everything installed (apt packages, flatpaks, snaps, VS Code extensions, GNOME Shell extensions, pip / pipx / cargo / npm packages, `go install`-ed binaries, locally-pulled Ollama models, AppImages, GNOME settings, plus clues from your shell history and manual installs), and lets you reinstall it on a fresh system through a slick interactive picker.
+**Reliure** scans your Linux system, builds a YAML list of everything installed (apt packages, flatpaks, snaps, VS Code extensions, GNOME Shell extensions, pip / pipx / cargo / npm packages, `go install`-ed binaries, locally-pulled Ollama models, AppImages, saved Wi-Fi & VPN connections, GNOME settings, plus clues from your shell history and manual installs), and lets you reinstall it on a fresh system through a slick interactive picker.
 
 It's a single static binary built in Go.
 
@@ -16,9 +16,25 @@ It's a single static binary built in Go.
 
 - **Single static binary** (~6 MB, `linux/amd64`). No Python, no `dialog`, no `whiptail`, no curl-piped scripts on the new system.
 - **Slick TUI** built on the Charm stack (Bubble Tea + Bubbles + Lip Gloss). Multi-page wizard, six labelled buttons, all keyboard-driven, with a `back` option from every confirmation.
-- **Smart scanning**: picks up apt, flatpak, snap, VS Code, GNOME Shell extensions, pip / pipx / cargo / npm, `go install`-ed binaries, locally-pulled Ollama models, AppImages, GNOME dconf settings, and inference sources (shell history + manual installs in `/opt`, `/usr/local/bin`, `~/.local/bin`, third-party APT repos, runtime fingerprints).
+- **Smart scanning**: picks up apt, flatpak, snap, VS Code, GNOME Shell extensions, pip / pipx / cargo / npm, `go install`-ed binaries, locally-pulled Ollama models, AppImages, saved Wi-Fi & VPN connections (with `sudo`), GNOME dconf settings, and inference sources (shell history + manual installs in `/opt`, `/usr/local/bin`, `~/.local/bin`, third-party APT repos, runtime fingerprints).
 - **OS-vs-user diff**: packages that arrived with the original Ubuntu install are flagged `[os]` (heuristic: `/var/log/installer/*` mtime ± dpkg.log burst detection) so you can focus on what *you* added.
 - **Printable HTML report**: `reliure report <snapshot.yaml>` emits a styled standalone HTML — open in a browser and Cmd/Ctrl-P → Save as PDF.
+
+---
+
+## ⚠ Sensitive data in snapshots
+
+When you scan with `sudo` to include `wifi` and `vpn` sources, reliure embeds the full `.nmconnection` text — **including pre-shared keys, VPN passwords, and certificates** — into the snapshot YAML, base64-encoded under a `payload:` field per entry. The encoding makes the file readable but **does not encrypt anything**: anyone with the YAML can recover the secrets.
+
+When wifi/vpn are present in your snapshot:
+
+- Treat the YAML like an SSH private key. Mode 600. Don't commit it to a public repo.
+- Restore writes each file back as `/etc/NetworkManager/system-connections/<id>.nmconnection`, mode 600 root, then runs `sudo nmcli connection reload` once.
+- To skip these sources at scan time, run **without sudo** — wifi/vpn skip cleanly with a one-line "needs root" hint, every other scanner runs normally. Or pass an explicit source list: `reliure backup --source apt --source flatpak --source snap …`.
+
+The `apt`, `flatpak`, `snap`, `vscode`, etc. sources are unprivileged and never carry secrets.
+
+`sudo reliure backup` is supported: reliure runs the wifi/vpn scanners as root first, then drops back to `$SUDO_USER` (re-setting `HOME`, `USER`, and prepending `~/.cargo/bin`, `~/.local/bin`, `~/go/bin`, etc. to `PATH`) before the user-space scanners run — so `code`, `cargo`, `pipx`, the history files, and the rest behave correctly.
 
 ---
 
@@ -40,7 +56,7 @@ The full clean-reinstall workflow:
     reliure
     ```
 
-   The system gets scanned, you walk through a multi-page checkbox picker (one page per source: apt, flatpak, snap, vscode, gnome-ext, pip, pipx, cargo, npm, go binaries, ollama models, appimages, plus an "inferred" review page), and a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`. Optionally a `reliure-gnome-YYYYMMDD.dconf` is dumped into `~/Documents/`.
+   The system gets scanned, you walk through a multi-page checkbox picker (one page per source: apt, flatpak, snap, vscode, gnome-ext, pip, pipx, cargo, npm, go binaries, ollama models, appimages, wifi networks, vpn connections, plus an "inferred" review page), and a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`. Optionally a `reliure-gnome-YYYYMMDD.dconf` is dumped into `~/Documents/`.
 
 3. **Back up your data** with whatever tool you usually use (DéjaDup, Borg, rsync, …). Make sure `~/Documents/` and `~/.config/reliure/` are included so the snapshot and dconf file go with it.
 
@@ -161,6 +177,30 @@ reliure version
 
 ---
 
+## List & diff
+
+Two read-only commands for inspecting snapshots without booting the picker.
+
+**`reliure list`** prints a styled table grouped by source — handy for a quick sanity check after a scan, or to grep for a specific package by piping through `--no-color | grep`.
+
+```bash
+reliure list ~/.config/reliure/snapshots/reliure-20260509.yaml
+reliure list snap.yaml --source apt --user-only      # apt only, hide [os]-tagged
+reliure list snap.yaml --essential                   # only what you flagged essential
+reliure list snap.yaml --unverified                  # only the inferred review pile
+```
+
+**`reliure diff`** compares two snapshots — typically yesterday's vs. today's, or pre-reinstall vs. post-restore — and shows added / removed / version-changed entries:
+
+```bash
+reliure diff ~/.config/reliure/snapshots/reliure-20260101.yaml \
+             ~/.config/reliure/snapshots/reliure-20260509.yaml
+```
+
+Both commands read the YAML, run no installs, and require no privileges.
+
+---
+
 ## Reports
 
 `reliure report` turns a snapshot into a styled, standalone HTML document — useful as an archival artefact or a printable PDF.
@@ -192,6 +232,8 @@ Layout: a header with the date / host / OS / package counts, a two-column table 
 | `go`              | `go version -m` on each binary in `$GOBIN` (or `$GOPATH/bin`, default `~/go/bin`); restore re-runs `go install <path>@<version>` |
 | `ollama`          | `ollama list` — locally pulled models; restore re-pulls each via `ollama pull <model:tag>`                                        |
 | `appimage`        | `*.AppImage` files in `~/Applications/`, `~/.local/bin/`, `/opt/`. Manual re-download — restore prints filenames as a to-do list |
+| `wifi`            | NetworkManager wifi profiles. Discovered via `nmcli -t -f NAME,TYPE,FILENAME,UUID connection show`, then each keyfile is read directly — handles both vanilla keyfile setups (`/etc/NetworkManager/system-connections/`) and Ubuntu's netplan-managed layout where the runtime files live in `/run/NetworkManager/system-connections/`. Root-only at scan time — without sudo, scanner emits `needs root — re-run with \`sudo\` to include networks` if any matching profile exists. Full file text (incl. PSK) base64-encoded into `payload:`. See [Sensitive data in snapshots](#-sensitive-data-in-snapshots). |
+| `vpn`             | Same as `wifi`, for `type=vpn` (OpenVPN/PPTP/etc.) and `type=wireguard` connections. |
 | GNOME settings    | `dconf dump /org/gnome/` (optional, prompted at backup time)                                                                      |
 | shell history     | `~/.bash_history`, `~/.zsh_history` for install commands (`apt`, `snap`, `flatpak`, `pip`, `pipx`, `cargo`, `npm`, VS Code)        |
 | manual installs   | `/opt/`, `/usr/local/bin/`, `~/.local/bin/`, `/etc/apt/sources.list.d/`, plus fingerprint dirs (`~/.nvm`, `~/.ollama`, `/etc/docker`, `~/.rustup`, `~/.deno`, `~/.bun`, `~/.pyenv`, …) |

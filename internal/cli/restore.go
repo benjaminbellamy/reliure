@@ -141,6 +141,8 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 		installer.GoBinInstaller{},
 		installer.OllamaInstaller{},
 		installer.AppImageInstaller{},
+		installer.WifiInstaller{},
+		installer.VPNInstaller{},
 	}
 	for _, ins := range installers {
 		if !ins.Available() {

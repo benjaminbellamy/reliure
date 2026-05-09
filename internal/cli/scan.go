@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -45,7 +46,7 @@ func runScan(ctx context.Context, theme tui.Theme, opts scanOpts) (*snapshot.Sna
 	meta := snapshot.NewMeta(system.Hostname(), system.PrettyName(), system.Codename())
 	snap := snapshot.New(meta)
 
-	for _, s := range scs {
+	runOne := func(s scanner.Scanner) {
 		spin := tui.NewSpinner("scanning " + s.Name() + " …")
 		spin.Start()
 		res := scanner.Run(ctx, s)
@@ -63,6 +64,26 @@ func runScan(ctx context.Context, theme tui.Theme, opts scanOpts) (*snapshot.Sna
 			fmt.Println("  " + theme.OK.Render("✓") + " " + theme.Title.Render(s.Name()) + "  " +
 				theme.Muted.Render(fmt.Sprintf("%d package(s)", len(res.Packages))))
 		}
+	}
+
+	// Wifi/VPN need root to read /etc/NetworkManager/system-connections.
+	// Run them first so we can immediately drop back to $SUDO_USER for
+	// the rest — otherwise ``code`` self-aborts as uid 0, cargo/pipx/npm
+	// fall off sudo's secure_path, and the history scanner reads /root's
+	// (empty) bash_history. The drop is a no-op when reliure isn't running
+	// under sudo.
+	rootScanners, userScanners := partitionRootScanners(scs)
+	for _, s := range rootScanners {
+		runOne(s)
+	}
+	if dropped, err := dropPrivilegesIfSudo(); err != nil {
+		fmt.Println("  " + theme.Err.Render("⚠ could not drop privileges: "+err.Error()))
+		fmt.Println("  " + theme.Subtitle.Render("  remaining scanners may fail under root"))
+	} else if dropped {
+		fmt.Println("  " + theme.Subtitle.Render("· dropped privileges to "+os.Getenv("USER")))
+	}
+	for _, s := range userScanners {
+		runOne(s)
 	}
 
 	snap.Dedupe()

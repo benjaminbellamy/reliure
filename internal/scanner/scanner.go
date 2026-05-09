@@ -59,10 +59,21 @@ func Run(ctx context.Context, s Scanner) Result {
 
 	pkgs, err := s.Scan(ctx)
 	if err != nil {
+		var se *SkipError
+		if errors.As(err, &se) {
+			return Result{Source: s.Name(), SkippedReason: se.Reason}
+		}
 		return Result{Source: s.Name(), Errors: []string{fmt.Sprintf("%s: %v", s.Name(), err)}}
 	}
 	return Result{Source: s.Name(), Packages: pkgs}
 }
+
+// SkipError is returned by a Scanner's Scan when the source is present but
+// can't be read in this invocation (e.g. needs root). Run translates it into
+// SkippedReason so the CLI surfaces a hint instead of a red error line.
+type SkipError struct{ Reason string }
+
+func (e *SkipError) Error() string { return e.Reason }
 
 // Have reports whether ``cmd`` is on PATH.
 func Have(cmd string) bool {

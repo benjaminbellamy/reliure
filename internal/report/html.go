@@ -77,6 +77,8 @@ var sectionOrder = []struct {
 	{"go", "Go binaries (go install)", snapshot.SourceGo},
 	{"ollama", "Ollama models", snapshot.SourceOllama},
 	{"appimage", "AppImages (manual re-download)", snapshot.SourceAppImage},
+	{"wifi", "Wi-Fi networks", snapshot.SourceWifi},
+	{"vpn", "VPN connections", snapshot.SourceVPN},
 	{"history", "Inferred from shell history", snapshot.SourceHistory},
 	{"manual", "Manual installs", snapshot.SourceManual},
 }

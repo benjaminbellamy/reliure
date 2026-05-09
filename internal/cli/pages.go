@@ -68,6 +68,10 @@ func buildPickerPages(s *snapshot.Snapshot, checked func(snapshot.Package) bool,
 			idFn: func(p snapshot.Package) string { return p.Name }},
 		{key: snapshot.SourceAppImage, title: "appimages (manual re-download)", install: noInst,
 			idFn: func(p snapshot.Package) string { return p.Name }},
+		{key: snapshot.SourceWifi, title: "wifi networks", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
+		{key: snapshot.SourceVPN, title: "vpn connections", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
 	}
 
 	pages := []picker.Page{}
