@@ -12,6 +12,16 @@ Format, Reinstall, Restore. A new clean system every 6 months.
 
 It's a single static binary built in Go.
 
+![reliure picker — flatpak page](docs/screenshot.png)
+
+## Install
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/benjaminbellamy/reliure/main/install.sh | sh
+```
+
+Drops the latest `linux/amd64` binary into `/usr/local/bin/` (one sudo prompt). Both `reliure` and `sudo reliure` work afterward — the latter is needed for the wifi/vpn scanners. If sudo isn't available, the installer falls back to `~/.local/bin/` and warns that `sudo reliure` won't be on PATH.
+
 ### Highlights
 
 - **Single static binary** (~6 MB, `linux/amd64`). No Python, no `dialog`, no `whiptail`, no curl-piped scripts on the new system.
@@ -40,17 +50,9 @@ The `apt`, `flatpak`, `snap`, `vscode`, etc. sources are unprivileged and never 
 
 ## How to use it
 
-The full clean-reinstall workflow:
+The full clean-reinstall workflow (assumes you've already [installed](#install) reliure above):
 
-1. **Install reliure** — without cloning the repo:
-
-    ```bash
-    curl -sSfL https://raw.githubusercontent.com/benjaminbellamy/reliure/main/install.sh | sh
-    ```
-
-   This downloads the latest `linux/amd64` binary into `/usr/local/bin/` (one sudo prompt). Both `reliure` and `sudo reliure` work afterward — `sudo reliure backup` is the way to include the wifi/vpn scanners. If sudo isn't available, the installer falls back to `~/.local/bin/` and warns that `sudo reliure` won't be on PATH.
-
-2. **Run the backup:**
+1. **Run the backup:**
 
     ```bash
     reliure
@@ -58,13 +60,13 @@ The full clean-reinstall workflow:
 
    The system gets scanned, you walk through a multi-page checkbox picker (one page per source: apt, flatpak, snap, vscode, gnome-ext, pip, pipx, cargo, npm, go binaries, ollama models, appimages, wifi networks, vpn connections, plus an "inferred" review page), and a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`. Optionally a `reliure-gnome-YYYYMMDD.dconf` is dumped into `~/Documents/`.
 
-3. **Back up your data** with whatever tool you usually use (DéjaDup, Borg, rsync, …). Make sure `~/Documents/` and `~/.config/reliure/` are included so the snapshot and dconf file go with it.
+2. **Back up your data** with whatever tool you usually use (DéjaDup, Borg, rsync, …). Make sure `~/Documents/` and `~/.config/reliure/` are included so the snapshot and dconf file go with it.
 
-4. **Format and reinstall** Ubuntu (or your derivative).
+3. **Format and reinstall** Ubuntu (or your derivative).
 
-5. **Restore your data backup**, again with your usual tool.
+4. **Restore your data backup**, again with your usual tool.
 
-6. **Reinstall reliure on the new system** (the install one-liner above), then run the restore:
+5. **Reinstall reliure on the new system** (re-run the install one-liner from above), then run the restore:
 
     ```bash
     reliure restore ~/.config/reliure/snapshots/reliure-20260426.yaml
