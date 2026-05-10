@@ -48,7 +48,7 @@ The full clean-reinstall workflow:
     curl -sSfL https://raw.githubusercontent.com/benjaminbellamy/reliure/main/install.sh | sh
     ```
 
-   This downloads the latest `linux/amd64` binary into `~/.local/bin/`.
+   This downloads the latest `linux/amd64` binary into `/usr/local/bin/` (one sudo prompt). Both `reliure` and `sudo reliure` work afterward — `sudo reliure backup` is the way to include the wifi/vpn scanners. If sudo isn't available, the installer falls back to `~/.local/bin/` and warns that `sudo reliure` won't be on PATH.
 
 2. **Run the backup:**
 

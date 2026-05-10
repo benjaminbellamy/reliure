@@ -1,14 +1,20 @@
 #!/usr/bin/env sh
-# reliure installer — downloads the latest pre-built binary into ~/.local/bin.
+# reliure installer — downloads the latest pre-built binary into /usr/local/bin.
 #
 # Usage:
 #   curl -sSfL https://raw.githubusercontent.com/benjaminbellamy/reliure/main/install.sh | sh
+#
+# /usr/local/bin is on the default sudo secure_path on every Linux distro,
+# so both `reliure` and `sudo reliure` (needed for the wifi/vpn scanners)
+# work after install. If sudo isn't available the script falls back to
+# ~/.local/bin and warns that `sudo reliure` won't be on PATH.
 
 set -eu
 
 REPO="benjaminbellamy/reliure"
 BIN="reliure"
-INSTALL_DIR="${HOME}/.local/bin"
+SYSTEM_DIR="/usr/local/bin"
+USER_DIR="${HOME}/.local/bin"
 
 err() { printf 'error: %s\n' "$*" >&2; exit 1; }
 say() { printf '  %s\n' "$*"; }
@@ -49,13 +55,36 @@ EXPECTED=$(grep " ${ASSET}\$" "${TMP}/SHA256SUMS" | awk '{print $1}')
 ACTUAL=$(sha256sum "${TMP}/${ASSET}" | awk '{print $1}')
 [ "$EXPECTED" = "$ACTUAL" ] || err "checksum mismatch (expected ${EXPECTED}, got ${ACTUAL})."
 
-mkdir -p "$INSTALL_DIR"
-install -m 0755 "${TMP}/${ASSET}" "${INSTALL_DIR}/${BIN}"
+# Pick install dir: /usr/local/bin if we're already root or sudo is
+# available; ~/.local/bin otherwise. Using install(1) (rather than cp +
+# chmod) ensures atomic replacement and root-owned mode 755.
+if [ "$(id -u)" -eq 0 ]; then
+    INSTALL_DIR="$SYSTEM_DIR"
+    INSTALL_CMD="install"
+elif command -v sudo >/dev/null 2>&1; then
+    INSTALL_DIR="$SYSTEM_DIR"
+    INSTALL_CMD="sudo install"
+    say "Installing to ${SYSTEM_DIR} (sudo password may be requested) …"
+else
+    INSTALL_DIR="$USER_DIR"
+    INSTALL_CMD="install"
+    mkdir -p "$INSTALL_DIR"
+fi
+
+# shellcheck disable=SC2086
+$INSTALL_CMD -m 0755 "${TMP}/${ASSET}" "${INSTALL_DIR}/${BIN}"
 say "Installed: ${INSTALL_DIR}/${BIN}"
 
-case ":${PATH}:" in
-    *":${INSTALL_DIR}:"*) ;;
-    *) printf '\n  Add ~/.local/bin to your PATH:\n\n    export PATH="$HOME/.local/bin:$PATH"\n\n' ;;
-esac
+if [ "$INSTALL_DIR" = "$USER_DIR" ]; then
+    case ":${PATH}:" in
+        *":${INSTALL_DIR}:"*) ;;
+        *) printf '\n  Add ~/.local/bin to your PATH:\n\n    export PATH="$HOME/.local/bin:$PATH"\n\n' ;;
+    esac
+    printf '  Note: sudo not available, so reliure was installed in your user dir.\n'
+    printf '        \`sudo reliure\` will fail with \`command not found\` — the wifi/vpn\n'
+    printf '        scanners need root. Either re-run this installer on a machine\n'
+    printf '        with sudo, or install manually:\n\n'
+    printf '          sudo install -m 0755 ~/.local/bin/reliure /usr/local/bin/reliure\n'
+fi
 
 printf '\n  Run:  %s\n' "${BIN}"
