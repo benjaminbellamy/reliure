@@ -21,7 +21,6 @@ type RestoreCmd struct {
 	DryRun         bool     `name:"dry-run" help:"Print commands without executing them."`
 	EssentialOnly  bool     `name:"essential-only" help:"Skip the picker and install only items flagged essential."`
 	Sources        []string `name:"source" help:"Restrict to these sources." placeholder:"NAME"`
-	NoGnome        bool     `name:"no-gnome" help:"Don't ask about GNOME settings."`
 	GnomeFile      string   `name:"gnome-file" help:"Explicit path to the dconf file (default: alongside the snapshot)."`
 	Yes            bool     `short:"y" help:"Skip the final \"install N packages?\" confirmation."`
 }
@@ -143,6 +142,7 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 		installer.AppImageInstaller{},
 		installer.WifiInstaller{},
 		installer.VPNInstaller{},
+		installer.MountsInstaller{},
 	}
 	for _, ins := range installers {
 		if !ins.Available() {
@@ -171,12 +171,11 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 	return nil
 }
 
-// maybeApplyGNOME asks (or, with --no-gnome, doesn't) whether to apply a
-// dconf file alongside the snapshot.
+// maybeApplyGNOME asks whether to apply a dconf file alongside the
+// snapshot. The y/n prompt is the consent: a dedicated --no-gnome flag
+// would just duplicate "answer no", so the only flag left is --gnome-file
+// for pointing at a non-default dconf path.
 func (c *RestoreCmd) maybeApplyGNOME(ctx context.Context, theme tui.Theme, snap *snapshot.Snapshot) error {
-	if c.NoGnome {
-		return nil
-	}
 	dconfPath := c.GnomeFile
 	if dconfPath == "" {
 		dconfPath = filepath.Join(filepath.Dir(c.Snapshot),

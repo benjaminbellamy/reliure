@@ -29,6 +29,8 @@ func buildPickerPages(s *snapshot.Snapshot, checked func(snapshot.Package) bool,
 		apt, fp, sn, vs = installed.Apt, installed.Flatpak, installed.Snap, installed.VSCode
 	}
 	defs := []srcDef{
+		{key: snapshot.SourceMounts, title: "mounted disks (fstab)", install: noInst,
+			idFn: func(p snapshot.Package) string { return p.Name }},
 		{key: snapshot.SourceApt, title: "apt", install: apt,
 			idFn: func(p snapshot.Package) string { return p.Name }},
 		{key: snapshot.SourceFlatpak, title: "flatpak", install: fp,

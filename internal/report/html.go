@@ -65,6 +65,7 @@ type Stats struct {
 var sectionOrder = []struct {
 	id, title, source string
 }{
+	{"mounts", "Mounted disks (fstab)", snapshot.SourceMounts},
 	{"apt", "apt", snapshot.SourceApt},
 	{"flatpak", "flatpak", snapshot.SourceFlatpak},
 	{"snap", "snap", snapshot.SourceSnap},

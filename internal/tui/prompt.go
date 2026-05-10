@@ -99,6 +99,24 @@ func AskYesNo(theme Theme, prompt string, dflt bool) bool {
 	return dflt
 }
 
+// PressEnter blocks until the user presses Enter (proceed) or types Q
+// (abort). Returns true to proceed, false to abort. Non-TTY stdin returns
+// true so non-interactive runs aren't stuck. EOF (Ctrl-D) is treated as
+// abort, matching the picker's quit semantics.
+func PressEnter(theme Theme, prompt string) bool {
+	if !isTTY(os.Stdin) {
+		return true
+	}
+	fmt.Print("  " + theme.Muted.Render(prompt) + " ")
+	r := bufio.NewReader(os.Stdin)
+	line, err := r.ReadString('\n')
+	if err != nil {
+		return false
+	}
+	ans := strings.ToLower(strings.TrimSpace(line))
+	return ans != "q" && ans != "quit"
+}
+
 // Confirm is the three-way result of AskConfirm: continue, abort, or go back.
 type Confirm int
 

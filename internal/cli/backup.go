@@ -23,7 +23,6 @@ type BackupCmd struct {
 	IncludeInference bool     `name:"include-inference" help:"Also run inference scanners (history, manual)." default:"true" negatable:""`
 	Exclude          []string `help:"Drop entries whose id matches the glob (repeatable)." placeholder:"PATTERN"`
 	NoTUI            bool     `name:"no-tui" help:"Skip the picker; keep everything scanned."`
-	NoGnome          bool     `name:"no-gnome" help:"Skip the GNOME settings dump."`
 	Edit             bool     `help:"Open the snapshot in $EDITOR after writing."`
 }
 
@@ -61,23 +60,28 @@ func (c *BackupCmd) Run(ctx context.Context) error {
 	fmt.Println("  " + theme.Muted.Render(
 		fmt.Sprintf("found %d package(s) — %d direct, %d inferred", len(snap.Packages), direct, inferred)))
 
-	// 2. GNOME settings
+	fmt.Println()
+	if !tui.PressEnter(theme, "Press Enter to continue, Q to quit now…") {
+		fmt.Println("  " + theme.Subtitle.Render("aborted"))
+		return nil
+	}
+
+	// 2. GNOME settings — captured automatically when dconf is available.
+	// No prompt, no flag: the dconf file is always written alongside the
+	// snapshot. Restore still asks before applying.
 	backupDir := defaultBackupDir()
 	_ = os.MkdirAll(backupDir, 0o755)
 	var gnomeFile string
-	if !c.NoGnome && settings.GNOMEAvailable() {
-		fmt.Println()
-		if tui.AskYesNo(theme, "Also back up GNOME settings (dconf)?", true) {
-			path := filepath.Join(backupDir, settings.DefaultDconfFilename(snap.Meta.Date))
-			n, err := settings.DumpGNOME(ctx, path)
-			if err != nil {
-				fmt.Println("  " + theme.Warn.Render("could not dump dconf: "+err.Error()))
-			} else if n == 0 {
-				fmt.Println("  " + theme.Subtitle.Render("dconf produced no output — skipped"))
-			} else {
-				gnomeFile = path
-				fmt.Println("  " + theme.OK.Render(fmt.Sprintf("✓ %s (%d bytes)", path, n)))
-			}
+	if settings.GNOMEAvailable() {
+		path := filepath.Join(backupDir, settings.DefaultDconfFilename(snap.Meta.Date))
+		n, err := settings.DumpGNOME(ctx, path)
+		if err != nil {
+			fmt.Println("  " + theme.Warn.Render("could not dump dconf: "+err.Error()))
+		} else if n == 0 {
+			fmt.Println("  " + theme.Subtitle.Render("dconf produced no output — skipped"))
+		} else {
+			gnomeFile = path
+			fmt.Println("  " + theme.OK.Render(fmt.Sprintf("✓ GNOME settings: %s (%d bytes)", path, n)))
 		}
 	}
 
