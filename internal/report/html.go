@@ -80,6 +80,7 @@ var sectionOrder = []struct {
 	{"appimage", "AppImages (manual re-download)", snapshot.SourceAppImage},
 	{"wifi", "Wi-Fi networks", snapshot.SourceWifi},
 	{"vpn", "VPN connections", snapshot.SourceVPN},
+	{"bluetooth", "Bluetooth devices", snapshot.SourceBluetooth},
 	{"history", "Inferred from shell history", snapshot.SourceHistory},
 	{"manual", "Manual installs", snapshot.SourceManual},
 }

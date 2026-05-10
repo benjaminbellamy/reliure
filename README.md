@@ -8,7 +8,7 @@ Format, Reinstall, Restore. A new clean system every 6 months.
 
 ---
 
-**Reliure** scans your Linux system, builds a YAML list of everything installed (apt packages, flatpaks, snaps, VS Code extensions, GNOME Shell extensions, pip / pipx / cargo / npm packages, `go install`-ed binaries, locally-pulled Ollama models, AppImages, saved Wi-Fi & VPN connections, mounted disks from `/etc/fstab`, GNOME settings, plus clues from your shell history and manual installs), and lets you reinstall it on a fresh system through a slick interactive picker.
+**Reliure** scans your Linux system, builds a YAML list of everything installed (apt packages, flatpaks, snaps, VS Code extensions, GNOME Shell extensions, pip / pipx / cargo / npm packages, `go install`-ed binaries, locally-pulled Ollama models, AppImages, saved Wi-Fi & VPN connections, paired Bluetooth devices, mounted disks from `/etc/fstab`, GNOME settings, plus clues from your shell history and manual installs), and lets you reinstall it on a fresh system through a slick interactive picker.
 
 It's a single static binary built in Go.
 
@@ -26,7 +26,7 @@ Drops the latest `linux/amd64` binary into `/usr/local/bin/` (one sudo prompt). 
 
 - **Single static binary** (~6 MB, `linux/amd64`). No Python, no `dialog`, no `whiptail`, no curl-piped scripts on the new system.
 - **Slick TUI** built on the Charm stack (Bubble Tea + Bubbles + Lip Gloss). Multi-page wizard, six labelled buttons, all keyboard-driven, with a `back` option from every confirmation.
-- **Smart scanning**: picks up apt, flatpak, snap, VS Code, GNOME Shell extensions, pip / pipx / cargo / npm, `go install`-ed binaries, locally-pulled Ollama models, AppImages, saved Wi-Fi & VPN connections (with `sudo`), mounted disks from `/etc/fstab`, GNOME dconf settings, and inference sources (shell history + manual installs in `/opt`, `/usr/local/bin`, `~/.local/bin`, third-party APT repos, runtime fingerprints).
+- **Smart scanning**: picks up apt, flatpak, snap, VS Code, GNOME Shell extensions, pip / pipx / cargo / npm, `go install`-ed binaries, locally-pulled Ollama models, AppImages, saved Wi-Fi & VPN connections (with `sudo`), paired Bluetooth devices (with `sudo`), mounted disks from `/etc/fstab`, GNOME dconf settings, and inference sources (shell history + manual installs in `/opt`, `/usr/local/bin`, `~/.local/bin`, third-party APT repos, runtime fingerprints).
 - **OS-vs-user diff**: packages that arrived with the original Ubuntu install are flagged `[os]` (heuristic: `/var/log/installer/*` mtime ± dpkg.log burst detection) so you can focus on what *you* added.
 - **Printable HTML report**: `reliure report <snapshot.yaml>` emits a styled standalone HTML — open in a browser and Cmd/Ctrl-P → Save as PDF.
 
@@ -34,17 +34,17 @@ Drops the latest `linux/amd64` binary into `/usr/local/bin/` (one sudo prompt). 
 
 ## ⚠ Sensitive data in snapshots
 
-When you scan with `sudo` to include `wifi` and `vpn` sources, reliure embeds the full `.nmconnection` text — **including pre-shared keys, VPN passwords, and certificates** — into the snapshot YAML, base64-encoded under a `payload:` field per entry. The encoding makes the file readable but **does not encrypt anything**: anyone with the YAML can recover the secrets.
+When you scan with `sudo` to include `wifi`, `vpn`, and `bluetooth` sources, reliure embeds source-of-truth text — **including Wi-Fi pre-shared keys, VPN passwords, certificates, and Bluetooth link keys** — into the snapshot YAML, base64-encoded under a `payload:` field per entry. The encoding makes the file readable but **does not encrypt anything**: anyone with the YAML can recover the secrets.
 
-When wifi/vpn are present in your snapshot:
+When wifi/vpn/bluetooth are present in your snapshot:
 
 - Treat the YAML like an SSH private key. Mode 600. Don't commit it to a public repo.
-- Restore writes each file back as `/etc/NetworkManager/system-connections/<id>.nmconnection`, mode 600 root, then runs `sudo nmcli connection reload` once.
-- To skip these sources at scan time, run **without sudo** — wifi/vpn skip cleanly with a one-line "needs root" hint, every other scanner runs normally. Or pass an explicit source list: `reliure backup --source apt --source flatpak --source snap …`.
+- Restore writes each network file back as `/etc/NetworkManager/system-connections/<id>.nmconnection` (mode 600 root + `sudo nmcli connection reload`), and each Bluetooth file back as `/var/lib/bluetooth/<adapter>/<device>/info` (mode 600 root + `sudo systemctl restart bluetooth`).
+- To skip these sources at scan time, run **without sudo** — wifi/vpn/bluetooth skip cleanly with a one-line "needs root" hint, every other scanner runs normally. Or pass an explicit source list: `reliure backup --source apt --source flatpak --source snap …`.
 
 The `apt`, `flatpak`, `snap`, `vscode`, etc. sources are unprivileged and never carry secrets.
 
-`sudo reliure backup` is supported: reliure runs the wifi/vpn scanners as root first, then drops back to `$SUDO_USER` (re-setting `HOME`, `USER`, and prepending `~/.cargo/bin`, `~/.local/bin`, `~/go/bin`, etc. to `PATH`) before the user-space scanners run — so `code`, `cargo`, `pipx`, the history files, and the rest behave correctly.
+`sudo reliure backup` is supported: reliure runs the wifi/vpn/bluetooth scanners as root first, then drops back to `$SUDO_USER` (re-setting `HOME`, `USER`, and prepending `~/.cargo/bin`, `~/.local/bin`, `~/go/bin`, etc. to `PATH`) before the user-space scanners run — so `code`, `cargo`, `pipx`, the history files, and the rest behave correctly.
 
 ---
 
@@ -58,7 +58,7 @@ The full clean-reinstall workflow (assumes you've already [installed](#install) 
     reliure
     ```
 
-   The system gets scanned, you walk through a multi-page checkbox picker (one page per source: mounted disks, apt, flatpak, snap, vscode, gnome-ext, pip, pipx, cargo, npm, go binaries, ollama models, appimages, wifi networks, vpn connections, plus an "inferred" review page), a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`, and a `reliure-gnome-YYYYMMDD.dconf` is dumped automatically alongside it.
+   The system gets scanned, you walk through a multi-page checkbox picker (one page per source: mounted disks, apt, flatpak, snap, vscode, gnome-ext, pip, pipx, cargo, npm, go binaries, ollama models, appimages, wifi networks, vpn connections, bluetooth devices, plus an "inferred" review page), a YAML snapshot lands in `~/.config/reliure/snapshots/reliure-YYYYMMDD.yaml`, and a `reliure-gnome-YYYYMMDD.dconf` is dumped automatically alongside it.
 
 2. **Back up your data** with whatever tool you usually use (DéjaDup, Borg, rsync, …). Make sure `~/Documents/` and `~/.config/reliure/` are included so the snapshot and dconf file go with it.
 
@@ -234,6 +234,7 @@ Layout: a header with the date / host / OS / package counts, a two-column table 
 | `appimage`        | `*.AppImage` files in `~/Applications/`, `~/.local/bin/`, `/opt/`. Manual re-download — restore prints filenames as a to-do list |
 | `wifi`            | NetworkManager wifi profiles. Discovered via `nmcli -t -f NAME,TYPE,FILENAME,UUID connection show`, then each keyfile is read directly — handles both vanilla keyfile setups (`/etc/NetworkManager/system-connections/`) and Ubuntu's netplan-managed layout where the runtime files live in `/run/NetworkManager/system-connections/`. Root-only at scan time — without sudo, scanner emits `needs root — re-run with \`sudo\` to include networks` if any matching profile exists. Full file text (incl. PSK) base64-encoded into `payload:`. See [Sensitive data in snapshots](#-sensitive-data-in-snapshots). |
 | `vpn`             | Same as `wifi`, for `type=vpn` (OpenVPN/PPTP/etc.) and `type=wireguard` connections. |
+| `bluetooth`       | Paired Bluetooth devices (keyboards, mice, speakers, headphones) from BlueZ's keystore at `/var/lib/bluetooth/<adapter>/<device>/info`. The full file body — including the link key — is base64-encoded into `payload:` so restore re-pairs without putting each device back into pairing mode. Root-only at scan time (the BlueZ dir is mode 700 root); without sudo, the scanner emits the same `needs root` hint as wifi/vpn. Restore writes each `info` file back via `sudo install -m 600 -o root -g root` and runs a single `sudo systemctl restart bluetooth` per batch. Same-machine reinstall is the design centre — adapter MAC is hardware, so it survives the reformat. |
 | `mounts`          | `/etc/fstab` user entries — data disks (UUID/LABEL), NFS, CIFS, sshfs. System mounts (root, `/boot*`, virtual filesystems, swap) are filtered out. The full fstab line is base64-encoded into `payload:`. Restore checks the spec resolves on the new system (`blkid -U`/`-L` for UUID/LABEL, `stat` for `/dev/…` paths, network specs are accepted as-is), then appends to `/etc/fstab` via `sudo tee -a` with `nofail` injected into the options column so a missing disk never drops the new boot to an emergency shell. Idempotent: a mountpoint already in fstab is skipped. |
 | GNOME settings    | `dconf dump /org/gnome/` (optional, prompted at backup time)                                                                      |
 | shell history     | `~/.bash_history`, `~/.zsh_history` for install commands (`apt`, `snap`, `flatpak`, `pip`, `pipx`, `cargo`, `npm`, VS Code)        |

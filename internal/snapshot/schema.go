@@ -19,29 +19,30 @@ type Source = string
 
 // Common source values.
 const (
-	SourceApt      Source = "apt"
-	SourceFlatpak  Source = "flatpak"
-	SourceSnap     Source = "snap"
-	SourceVSCode   Source = "vscode"
-	SourcePip      Source = "pip"
-	SourcePipx     Source = "pipx"
-	SourceCargo    Source = "cargo"
-	SourceNpm      Source = "npm"
-	SourceOllama   Source = "ollama"
-	SourceGo       Source = "go"
-	SourceAppImage Source = "appimage"
-	SourceWifi     Source = "wifi"
-	SourceVPN      Source = "vpn"
-	SourceMounts   Source = "mounts"
-	SourceManual   Source = "manual"
-	SourceHistory  Source = "history"
-	SourceGnomeExt Source = "gnome-ext"
+	SourceApt       Source = "apt"
+	SourceFlatpak   Source = "flatpak"
+	SourceSnap      Source = "snap"
+	SourceVSCode    Source = "vscode"
+	SourcePip       Source = "pip"
+	SourcePipx      Source = "pipx"
+	SourceCargo     Source = "cargo"
+	SourceNpm       Source = "npm"
+	SourceOllama    Source = "ollama"
+	SourceGo        Source = "go"
+	SourceAppImage  Source = "appimage"
+	SourceWifi      Source = "wifi"
+	SourceVPN       Source = "vpn"
+	SourceMounts    Source = "mounts"
+	SourceBluetooth Source = "bluetooth"
+	SourceManual    Source = "manual"
+	SourceHistory   Source = "history"
+	SourceGnomeExt  Source = "gnome-ext"
 )
 
 // Package is a single installed (or inferred) artefact.
 //
 // Field order matters: goccy/go-yaml emits fields in declaration order, which
-// matches Python's to_dict ordering. ``essential`` and ``notes`` are always
+// matches Python's to_dict ordering. “essential“ and “notes“ are always
 // emitted (no omitempty) so the YAML always has a place to flip a flag or
 // jot a note when editing by hand. Optional fields use omitempty.
 type Package struct {
@@ -55,7 +56,7 @@ type Package struct {
 	ExtensionID string `yaml:"extension_id,omitempty"`
 	Crate       string `yaml:"crate,omitempty"`
 	URL         string `yaml:"url,omitempty"`
-	Payload     string `yaml:"payload,omitempty"` // base64 — used by wifi/vpn (.nmconnection body) and mounts (fstab line)
+	Payload     string `yaml:"payload,omitempty"` // base64 — used by wifi/vpn (.nmconnection body), mounts (fstab line), bluetooth (BlueZ info file)
 	DetectedVia string `yaml:"detected_via,omitempty"`
 	Evidence    string `yaml:"evidence,omitempty"`
 	RestoreHint string `yaml:"restore_hint,omitempty"`
@@ -67,7 +68,7 @@ type Package struct {
 
 // NaturalKey returns a (source, canonical-name) pair used for dedup across
 // direct and inferred entries that refer to the same package. Direct and
-// inferred IDs differ in form (``apt:htop`` vs ``history:apt:htop``), but
+// inferred IDs differ in form (“apt:htop“ vs “history:apt:htop“), but
 // both should be considered the same package for dedup purposes.
 func (p Package) NaturalKey() [2]string {
 	switch p.Source {

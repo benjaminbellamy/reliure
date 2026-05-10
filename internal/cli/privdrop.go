@@ -132,12 +132,14 @@ func composeUserPath(home, existing string) string {
 }
 
 // partitionRootScanners splits scanners into those that need root at scan
-// time (currently wifi + vpn) and the rest. runScan uses this to schedule
-// the privileged ones before dropPrivilegesIfSudo is called.
+// time (wifi + vpn read /etc/NetworkManager/system-connections; bluetooth
+// reads /var/lib/bluetooth, mode 700 root) and the rest. runScan uses
+// this to schedule the privileged ones before dropPrivilegesIfSudo is
+// called.
 func partitionRootScanners(scs []scanner.Scanner) (root, user []scanner.Scanner) {
 	for _, s := range scs {
 		switch s.Name() {
-		case snapshot.SourceWifi, snapshot.SourceVPN:
+		case snapshot.SourceWifi, snapshot.SourceVPN, snapshot.SourceBluetooth:
 			root = append(root, s)
 		default:
 			user = append(user, s)

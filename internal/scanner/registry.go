@@ -26,6 +26,7 @@ func DefaultRegistry() *Registry {
 			"wifi":      WifiScanner{},
 			"vpn":       VPNScanner{},
 			"mounts":    MountsScanner{},
+			"bluetooth": BluetoothScanner{},
 		},
 		inference: map[string]Scanner{
 			"history": HistoryScanner{},
@@ -35,7 +36,7 @@ func DefaultRegistry() *Registry {
 }
 
 // directOrder is the canonical iteration order for direct scanners.
-var directOrder = []string{"mounts", "apt", "flatpak", "snap", "vscode", "gnome-ext", "pip", "pipx", "cargo", "npm", "go", "ollama", "appimage", "wifi", "vpn"}
+var directOrder = []string{"mounts", "apt", "flatpak", "snap", "vscode", "gnome-ext", "pip", "pipx", "cargo", "npm", "go", "ollama", "appimage", "wifi", "vpn", "bluetooth"}
 
 // inferenceOrder is the canonical iteration order for inference scanners.
 var inferenceOrder = []string{"history", "manual"}

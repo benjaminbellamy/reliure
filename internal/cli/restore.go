@@ -142,6 +142,7 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 		installer.AppImageInstaller{},
 		installer.WifiInstaller{},
 		installer.VPNInstaller{},
+		installer.BluetoothInstaller{},
 		installer.MountsInstaller{},
 	}
 	for _, ins := range installers {
