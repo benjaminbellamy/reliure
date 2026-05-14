@@ -81,6 +81,7 @@ var sectionOrder = []struct {
 	{"wifi", "Wi-Fi networks", snapshot.SourceWifi},
 	{"vpn", "VPN connections", snapshot.SourceVPN},
 	{"bluetooth", "Bluetooth devices", snapshot.SourceBluetooth},
+	{"udev", "Hardware permission rules (udev)", snapshot.SourceUdev},
 	{"history", "Inferred from shell history", snapshot.SourceHistory},
 	{"manual", "Manual installs", snapshot.SourceManual},
 }

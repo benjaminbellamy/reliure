@@ -144,6 +144,7 @@ func (c *RestoreCmd) Run(ctx context.Context) error {
 		installer.VPNInstaller{},
 		installer.BluetoothInstaller{},
 		installer.MountsInstaller{},
+		installer.UdevInstaller{},
 	}
 	for _, ins := range installers {
 		if !ins.Available() {

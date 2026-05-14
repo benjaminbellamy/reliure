@@ -34,6 +34,7 @@ const (
 	SourceVPN       Source = "vpn"
 	SourceMounts    Source = "mounts"
 	SourceBluetooth Source = "bluetooth"
+	SourceUdev      Source = "udev"
 	SourceManual    Source = "manual"
 	SourceHistory   Source = "history"
 	SourceGnomeExt  Source = "gnome-ext"
@@ -56,7 +57,7 @@ type Package struct {
 	ExtensionID string `yaml:"extension_id,omitempty"`
 	Crate       string `yaml:"crate,omitempty"`
 	URL         string `yaml:"url,omitempty"`
-	Payload     string `yaml:"payload,omitempty"` // base64 — used by wifi/vpn (.nmconnection body), mounts (fstab line), bluetooth (BlueZ info file)
+	Payload     string `yaml:"payload,omitempty"` // base64 — used by wifi/vpn (.nmconnection body), mounts (fstab line), bluetooth (BlueZ info file), udev (rules file body)
 	DetectedVia string `yaml:"detected_via,omitempty"`
 	Evidence    string `yaml:"evidence,omitempty"`
 	RestoreHint string `yaml:"restore_hint,omitempty"`
